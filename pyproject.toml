@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
-packages = [{include = "face_neural_network"}]
+packages = [{include = "facer"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -13,6 +13,7 @@ torchvision = "^0.14.0"
 fire = "^0.4.0"
 tqdm = "^4.64.1"
 matplotlib = "^3.6.2"
+opencv-python = "^4.6.0.66"
 
 
 [build-system]

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Tuple
 
 from torch import Tensor
 import torch.nn as nn
@@ -22,13 +23,13 @@ class ResnetBackbone(nn.Module):
 
         self.inplanes = backbone.inplanes
 
-    def _forward_impl(self, x: Tensor) -> Tensor:
-        x = self.start_conv(x)
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
+    def _forward_impl(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        x = x0 = self.start_conv(x)
+        x = x1 = self.layer1(x)
+        x = x2 = self.layer2(x)
+        x = x3 = self.layer3(x)
         x = self.layer4(x)
-        return x
+        return x, x3, x2, x1, x0
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         return self._forward_impl(x)
