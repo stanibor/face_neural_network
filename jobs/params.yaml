@@ -1,8 +1,8 @@
 dataset:
   directory: cropped
   download:
-    url: https://facesyntheticspubwedata.blob.core.windows.net/iccv-2021/dataset_1000.zip
-    file: dataset_1000
+    url: https://facesyntheticspubwedata.blob.core.windows.net/iccv-2021/dataset_100000.zip
+    file: dataset_100000
   transform:
     seed: 42
     crop: 320
