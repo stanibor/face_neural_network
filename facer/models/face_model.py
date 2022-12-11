@@ -46,7 +46,7 @@ class LandmarkRegressionModel(nn.Module):
 
     def _forward_impl(self, x: Tensor) -> Tensor:
         x = self.backbone(x)[0]
-        x = self.conv(x)
+        x = self.connector(x)
         x = self.regressor(x)
         return x.view(-1, *self.output_shape)
 

@@ -1,4 +1,5 @@
 from dataclasses import dataclass, astuple
+from os import PathLike
 from pathlib import Path
 from typing import Union
 
@@ -13,25 +14,27 @@ def to_device_collate(batch, device: Union[torch.device, str]):
 
 @dataclass
 class DatasetPaths:
-    directory: Path
-    images: Path = Path("images")
-    landmarks: Path = Path("landmarks")
-    masks: Path = Path("masks")
+    directory: PathLike[str]
+    images: PathLike[str] = Path("images")
+    landmarks: PathLike[str] = Path("landmarks")
+    masks: PathLike[str] = Path("masks")
 
     def __post_init__(self):
         self.directory = Path(self.directory)
 
     def with_directory(self, directory: Path):
-        return DatasetPaths(directory, *astuple(self)[:1])
+        return DatasetPaths(directory, *astuple(self)[1:])
 
     @property
-    def image_directory(self):
+    def images_directory(self):
         return Path(self.directory) / self.images
 
     @property
-    def landmark_directory(self):
+    def landmarks_directory(self):
         return Path(self.directory) / self.landmarks
 
     @property
     def masks_directory(self):
         return Path(self.directory) / self.masks
+
+

@@ -4,3 +4,7 @@
 
 #Pycharm files
 .idea
+.env
+
+#Dataset
+data/datasets

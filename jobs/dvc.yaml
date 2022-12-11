@@ -1,0 +1,68 @@
+stages:
+  download:
+    cmd: curl ${dataset.download.url} -o ../data/datasets/${dataset.download.file}.zip
+    params:
+      - dataset.download
+    outs:
+      - ../data/datasets/${dataset.download.file}.zip
+  unpack:
+    cmd: unzip ../data/datasets/${dataset.download.file} -d ../data/datasets/faces > ../data/datasets/log.txt &&
+      ls -l ../data/datasets/faces > ../data/datasets/faces/unpacked_log.txt
+    params:
+      - dataset.download.file
+    deps:
+      - ../data/datasets/${dataset.download.file}.zip
+    outs:
+      - ../data/datasets/faces/unpacked_log.txt
+      - ../data/datasets/log.txt
+  organize:
+    cmd: python process_dataset.py organize --directory=../data/datasets/faces
+    deps:
+      - process_dataset.py
+      - ../facer/datasets/processor.py
+      - ../data/datasets/faces/unpacked_log.txt
+    outs:
+      - ../data/datasets/faces/images
+      - ../data/datasets/faces/masks
+      - ../data/datasets/faces/landmarks
+  crop:
+    cmd: python process_dataset.py crop
+      --directory=../data/datasets/faces
+      --crop_width=${dataset.transform.crop}
+      --output=../data/datasets/cropped &&
+      ls -l ../data/datasets/cropped/images | wc -l > ../data/datasets/cropped/dataset_size.txt
+    params:
+      - dataset.transform.crop
+    deps:
+      - process_dataset.py
+      - ../facer/datasets/processor.py
+      - ../data/datasets/faces/images
+      - ../data/datasets/faces/masks
+      - ../data/datasets/faces/landmarks
+    outs:
+      - ../data/datasets/cropped/dataset_size.txt
+      - ../data/datasets/cropped/images
+      - ../data/datasets/cropped/masks
+      - ../data/datasets/cropped/landmarks
+  make_binary_masks:
+    cmd: python process_dataset.py binary_masks
+      --directory=../data/datasets/${dataset.directory}
+    deps:
+      - process_dataset.py
+      - ../facer/datasets/processor.py
+      - ../data/datasets/${dataset.directory}/masks
+    outs:
+      - ../data/datasets/${dataset.directory}/bin_masks
+  make_transform_json:
+    cmd: python make_transform_jsons.py 
+      --crop_size=${dataset.transform.crop} 
+      --output_size=${dataset.transform.resize}
+      --output=transforms/transform.json
+      --photometric_json=transforms/photometric.json
+    params:
+      - dataset.transform
+    deps:
+      - make_transform_jsons.py
+      - transforms/photometric.json
+    outs:
+      - transforms/transform.json
