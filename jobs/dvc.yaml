@@ -28,7 +28,7 @@ stages:
   crop:
     cmd: python process_dataset.py crop
       --directory=../data/datasets/faces
-      --crop_width=${dataset.transform.crop}
+      --crop_width=${dataset.transform.crop.max}
       --output=../data/datasets/cropped &&
       ls -l ../data/datasets/cropped/images | wc -l > ../data/datasets/cropped/dataset_size.txt
     params:
@@ -55,7 +55,7 @@ stages:
       - ../data/datasets/${dataset.directory}/bin_masks
   make_transform_json:
     cmd: python make_transform_jsons.py 
-      --crop_size=${dataset.transform.crop} 
+      --crop_min_max=(${dataset.transform.crop.min},${dataset.transform.crop.max})
       --output_size=${dataset.transform.resize}
       --output=transforms/transform.json
       --photometric_json=transforms/photometric.json

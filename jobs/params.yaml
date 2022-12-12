@@ -5,7 +5,9 @@ dataset:
     file: dataset_100000
   transform:
     seed: 42
-    crop: 320
+    crop:
+      min: 300
+      max: 320
     resize: 256
   split:
     seed: 42
