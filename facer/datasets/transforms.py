@@ -19,8 +19,8 @@ def photometric_transforms():
                            A.OneOf([A.RandomGamma(), A.RandomToneCurve()], p=0.05),
                            A.RGBShift(p=0.2),
                            A.OneOf([A.GaussianBlur(), A.Defocus()], p=0.05),
-                           A.GaussNoise(p=0.2),
-                           A.ISONoise(p=0.8)])
+                           A.GaussNoise(p=0.5),
+                           A.ISONoise(p=0.5)])
     return transform
 
 
