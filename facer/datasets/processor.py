@@ -45,7 +45,7 @@ class FaceDatasetProcessor:
         output_paths.masks_directory.mkdir(parents=True, exist_ok=True)
         self._print(f"Landmarks: {output_paths.landmarks_directory}")
         output_paths.landmarks_directory.mkdir(parents=True, exist_ok=True)
-        self._print("Reorganizing files")
+        self._print(f"Reorganizing files from: {self.dataset_paths.directory}")
         for image_file in self._tqdm(list(self.dataset_paths.directory.glob("*[0-9].png"))):
             mask_file = image_file.with_stem(image_file.stem + '_seg')
             ldmks_file = image_file.with_name(image_file.stem + '_ldmks.txt')
