@@ -8,7 +8,7 @@ import PIL
 import albumentations as A
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 import torchvision.transforms.functional as TF
 from tqdm import tqdm
 
@@ -48,64 +48,40 @@ class FaceDatasetProcessor:
         self._print(f"Reorganizing files from: {self.dataset_paths.directory}")
         for image_file in self._tqdm(list(self.dataset_paths.directory.glob("*[0-9].png"))):
             image_file = Path(image_file)
-            mask_file = image_file.with_stem(image_file.stem + '_seg')
+            mask_file = image_file.with_name(image_file.stem + '_seg.png')
             ldmks_file = image_file.with_name(image_file.stem + '_ldmks.txt')
 
             image_file.replace(output_paths.images_directory / image_file.name)
             mask_file.replace(output_paths.masks_directory / image_file.name)
             ldmks_file.replace(output_paths.landmarks_directory / image_file.with_suffix('.txt').name)
 
-    def split(self,
-              test: PathLike = Path("test"),
-              split: float = 0.1,
-              *,
-              seed: int = 42):
-
-        root = Path(self.dataset_paths.directory)
-
-        stems = [f"*{file.stem}.*" for file in self.dataset_paths.images_directory.iterdir() if file.is_file()]
-        np.random.default_rng(seed=seed).shuffle(stems)
-        test_len = int(float(split) * len(stems))
-        train_stems, test_stems = stems[test_len:], stems[:test_len]
-
-        dirs = [directory for directory in root.iterdir() if directory.is_dir()]
-
-        self._print("Creating output directories")
-        train_directory = root
-        test_directory = root / test
-        for directory in dirs:
-            relative_dir = directory.relative_to(root)
-            (test_directory / relative_dir).mkdir(parents=True, exist_ok=True)
-
-        self._print("Collecting test files")
-        relative_test_files = [file.relative_to(root)for stem in self._tqdm(test_stems) for file in root.rglob(stem)]
-
-        self._print("Moving test files")
-        for relative_file in self._tqdm(relative_test_files):
-            file = root / relative_file
-            new_path = test_directory / relative_file
-            file.replace(new_path)
-
-        # self._print("Cleaning old empty directories")
-        # for directory in dirs:
-        #     directory.rmdir()
-
-    def crop(self, crop_width: int,
+    def crop_and_split(self, crop_width: int,
              output: Optional[PathLike] = None,
+             test: PathLike = Path("test"),
              *,
+             split: float = 0.1,
+             seed: int = 42,
              p_offset: Tuple[float, float] = (1.0, 0.9),
              batch_size: int = 64):
         output = self.dataset_paths.directory if output is None else Path(output)
-        output_paths = self.dataset_paths.with_directory(output)
+        train_paths = self.dataset_paths.with_directory(output)
+        test_paths = train_paths.with_directory(train_paths.directory.parent / test)
 
-        output_paths.directory.mkdir(parents=True, exist_ok=True)
+        train_paths.directory.mkdir(parents=True, exist_ok=True)
 
-        output_paths.images_directory.mkdir(parents=True, exist_ok=True)
-        output_paths.masks_directory.mkdir(parents=True, exist_ok=True)
-        output_paths.landmarks_directory.mkdir(parents=True, exist_ok=True)
+        train_paths.images_directory.mkdir(parents=True, exist_ok=True)
+        train_paths.masks_directory.mkdir(parents=True, exist_ok=True)
+        train_paths.landmarks_directory.mkdir(parents=True, exist_ok=True)
+
+        test_paths.images_directory.mkdir(parents=True, exist_ok=True)
+        test_paths.masks_directory.mkdir(parents=True, exist_ok=True)
+        test_paths.landmarks_directory.mkdir(parents=True, exist_ok=True)
 
         dataset = SegmentationAndLandmarkDataset(**asdict(self.dataset_paths), transform=TO_TENSOR_TRANSFORM)
-        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+        generator = torch.Generator().manual_seed(seed)
+        test_len = int(split * len(dataset))
+        train_len = len(dataset) - test_len
+        test_dataset, train_dataset = random_split(dataset, (test_len, train_len), generator=generator)
 
         digits = len(str(len(dataset) - 1))
         edges = torch.empty(batch_size, 2, 2)
@@ -113,20 +89,51 @@ class FaceDatasetProcessor:
 
         p_offset = torch.tensor(p_offset)
 
-        for i, batch in enumerate(self._tqdm(dataloader)):
-            images, masks, landmarks = batch
-            samples = len(landmarks)
-            torch.aminmax(landmarks, dim=-2, out=(edges[:samples, 1], edges[:samples, 0]))
-            centers = edges[:samples].mean(-2).mul_(p_offset)
-            corners = centers.sub_(translator).round_().int()
-            new_landmarks = landmarks.sub(corners.unsqueeze(1))
-            for k, corner in enumerate(corners):
-                cropped_img = TF.to_pil_image(TF.crop(images[k], corner[1], corner[0], crop_width, crop_width))
-                cropped_mask = TF.to_pil_image(TF.crop(masks[k], corner[1], corner[0], crop_width, crop_width))
-                name = f"{(i * batch_size + k):0{digits}}"
-                cropped_img.save(output_paths.images_directory / f"{name}.png")
-                cropped_mask.save(output_paths.masks_directory / f"{name}.png")
-                np.savetxt(str(output_paths.landmarks_directory / f"{name}.txt"), new_landmarks[k].numpy(), fmt="%.3f")
+        for dset, output_paths in ((train_dataset, train_paths), (test_dataset, test_paths)):
+            self._print(f"Cropping new dataset: {output_paths.directory}")
+            dataloader = DataLoader(dset, batch_size=batch_size, shuffle=False)
+            for i, batch in enumerate(self._tqdm(dataloader)):
+                images, masks, landmarks = batch
+                samples = len(landmarks)
+                torch.aminmax(landmarks, dim=-2, out=(edges[:samples, 1], edges[:samples, 0]))
+                centers = edges[:samples].mean(-2).mul_(p_offset)
+                corners = centers.sub_(translator).round_().int()
+                new_landmarks = landmarks.sub(corners.unsqueeze(1))
+                for k, corner in enumerate(corners):
+                    cropped_img = TF.to_pil_image(TF.crop(images[k], corner[1], corner[0], crop_width, crop_width))
+                    cropped_mask = TF.to_pil_image(TF.crop(masks[k], corner[1], corner[0], crop_width, crop_width))
+                    name = f"{(i * batch_size + k):0{digits}}"
+                    cropped_img.save(output_paths.images_directory / f"{name}.png")
+                    cropped_mask.save(output_paths.masks_directory / f"{name}.png")
+                    np.savetxt(str(output_paths.landmarks_directory / f"{name}.txt"),
+                               new_landmarks[k].numpy(),
+                               fmt="%.3f")
+
+    def transform(self, output: PathLike, transform_json: PathLike):
+        transform = A.load(str(transform_json))
+        keypoint_params = A.KeypointParams(format='xy', remove_invisible=False)
+        transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
+        output = self.dataset_paths.directory if output is None else Path(output)
+        output_paths = self.dataset_paths.with_directory(output)
+
+        dataset = SegmentationAndLandmarkDataset(**asdict(self.dataset_paths), transform=transform)
+        output_dir = output_paths.directory
+        self._print(f"Transforming and saving in {output_paths.directory}")
+
+        output_paths.images_directory.mkdir(parents=True, exist_ok=True)
+        output_paths.masks_directory.mkdir(parents=True, exist_ok=True)
+        output_paths.landmarks_directory.mkdir(parents=True, exist_ok=True)
+
+        for i, sample in enumerate(self._tqdm(dataset)):
+            image, mask, landmarks = sample
+            transformed_image = TF.to_pil_image(image)
+            transformed_mask = TF.to_pil_image(mask)
+            new_img_path = output_dir / dataset.img_files[i].relative_to(self.dataset_paths.directory)
+            new_mask_path = output_dir / dataset.masks_files[i].relative_to(self.dataset_paths.directory)
+            new_ldmk_path = output_dir / dataset.landmark_files[i].relative_to(self.dataset_paths.directory)
+            transformed_image.save(new_img_path)
+            transformed_mask.save(new_mask_path)
+            np.savetxt(str(new_ldmk_path), landmarks.numpy(), fmt="%.3f")
 
     def binary_masks(self,
                      bin_masks: PathLike = Path("bin_masks"),
