@@ -22,7 +22,7 @@ if __name__ == "__main__":
     keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
 
-    model = PyramidRegressionModel(output_shape=(70, 3), pool_size=train_conf.landmarks.pool_size)
+    model = PyramidRegressionModel(output_shape=(70, 2), pool_size=train_conf.model.pool_size)
 
     wandb_logger = WandbLogger(project='wandb-landmark-regression', job_type='train')
 

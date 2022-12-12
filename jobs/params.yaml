@@ -17,7 +17,7 @@ dataset:
 training:
   epochs: 50
   batch_size: 32
-  landmarks:
+  model:
     pool_size: 2
   optimizer:
     lr: 1e-3
