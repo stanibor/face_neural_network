@@ -84,7 +84,7 @@ class LandmarkLocalizationDataset(ImageDataset):
         image = self._get_image(index)
         landmarks = self._get_landmarks(index)
         item = self.transform(image=image, keypoints=landmarks)
-        return item['image'], torch.tensor(item['keypoints'])
+        return item['image'], torch.tensor(item['keypoints'], dtype=torch.float)
 
 
 class SegmentationAndLandmarkDataset(SegmentationDataset, LandmarkLocalizationDataset):
