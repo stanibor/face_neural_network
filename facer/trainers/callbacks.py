@@ -11,7 +11,7 @@ MODEL_CKPT_PATH = 'model/'
 MODEL_CKPT = 'model-{epoch:02d}-{val_loss:.2f}'
 
 checkpoint_callback = ModelCheckpoint(
-    monitor='val_mse',
+    monitor='val_loss',
     dirpath=MODEL_CKPT_PATH,
     filename=MODEL_CKPT,
     save_top_k=3,

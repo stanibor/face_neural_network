@@ -9,6 +9,7 @@ import albumentations as A
 from pytorch_lightning.loggers import WandbLogger
 
 from facer.datasets.face_datasets import LandmarkLocalizationDataset
+from facer.datasets.transforms import TO_TENSOR_TRANSFORM
 from facer.models.face_model import LandmarkRegressionModel, PyramidRegressionModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
 from facer.trainers.landmark_trainer import LandmarkRegressor
@@ -19,6 +20,7 @@ if __name__ == "__main__":
     train_conf = conf.training
     transform = A.load("transforms/transform.json")
     dataset_path = Path("../data/datasets") / dataset_conf.directory
+    test_path = Path("../data/datasets") / conf.dataset.test.name
     keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
 
@@ -35,6 +37,7 @@ if __name__ == "__main__":
     valid_len = len(dataset) - train_len
     generator = torch.Generator().manual_seed(42)
     train_dataset, valid_dataset = random_split(dataset, (train_len, valid_len), generator=generator)
+    test_dataset = LandmarkLocalizationDataset(directory=test_path, transform=TO_TENSOR_TRANSFORM)
 
     train_loader = DataLoader(train_dataset,
                               batch_size=train_conf.batch_size,
@@ -46,6 +49,11 @@ if __name__ == "__main__":
                               num_workers=4,
                               pin_memory=True,
                               shuffle=False)
+    test_dataloader = DataLoader(test_dataset,
+                                 batch_size=train_conf.batch_size,
+                                 num_workers=4,
+                                 pin_memory=True,
+                                 shuffle=False)
 
     trainer = pl.Trainer(check_val_every_n_epoch=2,
                          gpus=1,
@@ -55,6 +63,7 @@ if __name__ == "__main__":
                          )
 
     trainer.fit(regressor, train_loader, valid_loader)
+    trainer.test(regressor, test_dataloader)
 
 
 
