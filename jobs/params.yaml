@@ -17,6 +17,6 @@ training:
   epochs: 50
   batch_size: 32
   landmarks:
-    pool_size: 4
+    pool_size: 2
   optimizer:
     lr: 1e-3

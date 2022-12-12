@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch import Tensor
 from torchvision.models import ResNet, resnet34, ResNet34_Weights
 from facer.models.backbone import ResnetBackbone
-from facer.models.regressor import RegressionConnector, AtrousPiramidSumator
+from facer.models.regressor import RegressionConnector, PyramidPooler
 
 DEFAULT_RESNET = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
 # DEFAULT_RESNET = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
@@ -15,9 +15,9 @@ DEFAULT_RESNET = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
 
 class LandmarkRegressionModel(nn.Module):
     def __init__(self,
-                 output_shape: Union[Iterable[int],torch.Size],
+                 output_shape: Union[Iterable[int], torch.Size],
                  backbone: ResNet = DEFAULT_RESNET,
-                 pool_size: int = 8,
+                 pool_size: int = 2,
                  hidden_channels: int = 1024,
                  *,
                  dropout=0.2):
@@ -34,7 +34,6 @@ class LandmarkRegressionModel(nn.Module):
             "dropout": nn.Dropout(dropout, inplace=False),
             "lrelu": nn.LeakyReLU(inplace=True),
             "fc": nn.Linear(self.hidden_channels * 4, self.output_shape.numel(), bias=True),
-            "activation": nn.Sigmoid()
         }))
 
     def _connector_class(self):
@@ -56,10 +55,13 @@ class LandmarkRegressionModel(nn.Module):
 
 class PyramidRegressionModel(LandmarkRegressionModel):
     def _connector_class(self):
-        return AtrousPiramidSumator(self.backbone.inplanes, self.hidden_channels, 3)
+        return PyramidPooler(self.backbone.inplanes,
+                             self.hidden_channels,
+                             2,
+                             self.hidden_channels//2)
 
     def _forward_impl(self, x: Tensor) -> Tensor:
-        x = self.backbone(x)[:3]
+        x = self.backbone(x)[:2]
         x = self.connector(x)
         x = self.regressor(x)
         return x.view(-1, *self.output_shape)
