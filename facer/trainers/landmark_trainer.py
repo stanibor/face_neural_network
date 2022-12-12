@@ -50,7 +50,8 @@ class LandmarkRegressor(pl.LightningModule):
         self.log('test_mse', mse, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+        optimizer = torch.optim.AdamW([{"params": self.model.backbone.parameters(), "lr": self.lr*1e-1},
+                                       {"params": self.model.regressor.parameters()}], lr=self.lr)
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
         return [optimizer], [lr_scheduler]
 

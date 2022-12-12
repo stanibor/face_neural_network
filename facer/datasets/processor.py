@@ -19,11 +19,11 @@ from facer.datasets.utils import DatasetPaths
 
 class FaceDatasetProcessor:
     def __init__(self,
-                 directory: PathLike[str],
+                 directory: PathLike,
                  *,
-                 images: PathLike[str] = DatasetPaths.images,
-                 landmarks: PathLike[str] = DatasetPaths.landmarks,
-                 masks: PathLike[str] = DatasetPaths.masks,
+                 images: PathLike = DatasetPaths.images,
+                 landmarks: PathLike = DatasetPaths.landmarks,
+                 masks: PathLike = DatasetPaths.masks,
                  verbose: bool = True):
         self.dataset_paths = DatasetPaths(Path(directory), images=images, landmarks=landmarks, masks=masks)
         self._verbose = bool(verbose)
@@ -35,7 +35,7 @@ class FaceDatasetProcessor:
     def _tqdm(self, *args, **kwargs):
         return tqdm(*args, **kwargs, disable=(not self._verbose))
 
-    def organize(self, output: Optional[PathLike[str]] = None):
+    def organize(self, output: Optional[PathLike] = None):
         output = self.dataset_paths.directory if output is None else Path(output)
         output_paths = self.dataset_paths.with_directory(output)
         self._print("Creating output directories")
@@ -55,7 +55,7 @@ class FaceDatasetProcessor:
             ldmks_file.replace(output_paths.landmarks_directory / image_file.with_suffix('.txt').name)
 
     def split(self,
-              test: PathLike[str] = Path("test"),
+              test: PathLike = Path("test"),
               split: float = 0.1,
               *,
               seed: int = 42):
@@ -90,7 +90,7 @@ class FaceDatasetProcessor:
         #     directory.rmdir()
 
     def crop(self, crop_width: int,
-             output: Optional[PathLike[str]] = None,
+             output: Optional[PathLike] = None,
              *,
              p_offset: Tuple[float, float] = (1.0, 0.9),
              batch_size: int = 64):
@@ -128,7 +128,7 @@ class FaceDatasetProcessor:
                 np.savetxt(str(output_paths.landmarks_directory / f"{name}.txt"), new_landmarks[k].numpy(), fmt="%.3f")
 
     def binary_masks(self,
-                     bin_masks: PathLike[str] = Path("bin_masks"),
+                     bin_masks: PathLike = Path("bin_masks"),
                      classes: Tuple[int] = (1, 2, 7, 8, 10, 11),
                      *,
                      batch_size: int = 64):
@@ -150,7 +150,7 @@ class FaceDatasetProcessor:
                 PIL.Image.fromarray(byte_mask.numpy()).save(name)
 
     def transform_dataset(self,
-                          transform_json: PathLike[str],
+                          transform_json: PathLike,
                           *,
                           batch_size: int = 64,
                           seed: int = 42):

@@ -13,9 +13,9 @@ from facer.datasets.transforms import NO_TRANSFORM
 
 class ImageDataset(data.Dataset):
     def __init__(self,
-                 directory: PathLike[str],
+                 directory: PathLike,
                  *,
-                 images: PathLike[str] = DatasetPaths.images,
+                 images: PathLike = DatasetPaths.images,
                  transform: A.Compose = NO_TRANSFORM):
         super().__init__()
         self.paths = DatasetPaths(Path(directory), images=images)
@@ -37,10 +37,10 @@ class ImageDataset(data.Dataset):
 
 class SegmentationDataset(ImageDataset):
     def __init__(self,
-                 directory: PathLike[str],
+                 directory: PathLike,
                  *,
-                 images: PathLike[str] = DatasetPaths.images,
-                 masks: PathLike[str] = DatasetPaths.masks,
+                 images: PathLike = DatasetPaths.images,
+                 masks: PathLike = DatasetPaths.masks,
                  transform: A.Compose = NO_TRANSFORM):
         super().__init__(directory, images=images, transform=transform)
         self.paths.masks = masks
@@ -60,10 +60,10 @@ class SegmentationDataset(ImageDataset):
 
 class LandmarkLocalizationDataset(ImageDataset):
     def __init__(self,
-                 directory: PathLike[str],
+                 directory: PathLike,
                  *,
-                 images: PathLike[str] = DatasetPaths.images,
-                 landmarks: PathLike[str] = DatasetPaths.landmarks,
+                 images: PathLike = DatasetPaths.images,
+                 landmarks: PathLike = DatasetPaths.landmarks,
                  transform: A.Compose = NO_TRANSFORM):
         super().__init__(directory, images=images, transform=transform)
         self.paths.landmarks = landmarks
@@ -89,11 +89,11 @@ class LandmarkLocalizationDataset(ImageDataset):
 
 class SegmentationAndLandmarkDataset(SegmentationDataset, LandmarkLocalizationDataset):
     def __init__(self,
-                 directory: PathLike[str],
+                 directory: PathLike,
                  *,
-                 images: PathLike[str] = DatasetPaths.images,
-                 masks: PathLike[str] = DatasetPaths.masks,
-                 landmarks: PathLike[str] = DatasetPaths.landmarks,
+                 images: PathLike = DatasetPaths.images,
+                 masks: PathLike = DatasetPaths.masks,
+                 landmarks: PathLike = DatasetPaths.landmarks,
                  transform: A.Compose = NO_TRANSFORM):
         LandmarkLocalizationDataset.__init__(self, directory, images=images, landmarks=landmarks)
         SegmentationDataset.__init__(self, directory, images=images, masks=masks, transform=transform)

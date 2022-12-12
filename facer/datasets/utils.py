@@ -14,10 +14,10 @@ def to_device_collate(batch, device: Union[torch.device, str]):
 
 @dataclass
 class DatasetPaths:
-    directory: PathLike[str]
-    images: PathLike[str] = Path("images")
-    landmarks: PathLike[str] = Path("landmarks")
-    masks: PathLike[str] = Path("masks")
+    directory: PathLike
+    images: PathLike = Path("images")
+    landmarks: PathLike = Path("landmarks")
+    masks: PathLike = Path("masks")
 
     def __post_init__(self):
         self.directory = Path(self.directory)

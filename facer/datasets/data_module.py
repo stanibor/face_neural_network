@@ -14,7 +14,7 @@ from facer.datasets.transforms import TO_TENSOR_TRANSFORM
 
 class FaceSyntheticsModule(pl.LightningDataModule):
     def __init__(self,
-                 root: PathLike[str],
+                 root: PathLike,
                  transform: A.Compose = TO_TENSOR_TRANSFORM,
                  *,
                  batch_size=32,

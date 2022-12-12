@@ -9,7 +9,7 @@ import albumentations as A
 from pytorch_lightning.loggers import WandbLogger
 
 from facer.datasets.face_datasets import LandmarkLocalizationDataset
-from facer.models.face_model import LandmarkRegressionModel
+from facer.models.face_model import LandmarkRegressionModel, PyramidRegressionModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
 from facer.trainers.landmark_trainer import LandmarkRegressor
 
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
 
-    model = LandmarkRegressionModel(output_shape=(70, 3), pool_size=train_conf.landmarks.pool_size)
+    model = PyramidRegressionModel(output_shape=(70, 3), pool_size=train_conf.landmarks.pool_size)
 
     wandb_logger = WandbLogger(project='wandb-landmark-regression', job_type='train')
 
