@@ -62,7 +62,7 @@ if __name__ == "__main__":
                          max_epochs=train_conf.epochs,
                          logger=wandb_logger,
                          callbacks=callbacks,
-
+                         accumulate_grad_batches=train_conf.grad_batches
                          )
 
     trainer.fit(regressor, train_loader, valid_loader)
