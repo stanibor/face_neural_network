@@ -1,9 +1,15 @@
 from collections import OrderedDict
-from typing import Tuple
+from typing import Tuple, Optional
 
 from torch import Tensor
 import torch.nn as nn
-from torchvision.models import ResNet
+from torchvision.models.resnet import ResNet
+
+
+def resnet_by_name(name: str, weights: Optional[str] = None):
+    from torchvision.models.resnet import __dict__ as resnet_dict
+    assert name in resnet_dict and 'resnet' in name, "Can't use this as backbone"
+    return resnet_dict[name](weights=weights)
 
 
 class ResnetBackbone(nn.Module):

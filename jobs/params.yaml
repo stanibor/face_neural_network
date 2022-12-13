@@ -15,9 +15,12 @@ dataset:
     split: 0.1
 
 training:
-  epochs: 50
-  batch_size: 32
+  epochs: 2
+  batch_size: 64
   model:
+    backbone:
+      name: resnet34
+      weights: IMAGENET1K_V1
     pool_size: 2
   optimizer:
-    lr: 1e-3
+    lr: 2e-4

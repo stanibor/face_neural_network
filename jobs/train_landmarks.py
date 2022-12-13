@@ -10,7 +10,8 @@ from pytorch_lightning.loggers import WandbLogger
 
 from facer.datasets.face_datasets import LandmarkLocalizationDataset
 from facer.datasets.transforms import TO_TENSOR_TRANSFORM
-from facer.models.face_model import LandmarkRegressionModel, PyramidRegressionModel
+from facer.models.backbone import resnet_by_name
+from facer.models.face_model import PyramidRegressionModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
 from facer.trainers.landmark_trainer import LandmarkRegressor
 
@@ -24,12 +25,13 @@ if __name__ == "__main__":
     keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
 
-    model = PyramidRegressionModel(output_shape=(70, 2), pool_size=train_conf.model.pool_size)
+    backbone = resnet_by_name(**train_conf.model.backbone)
+
+    model = PyramidRegressionModel(backbone=backbone, output_shape=(70, 2), pool_size=train_conf.model.pool_size)
 
     wandb_logger = WandbLogger(project='wandb-landmark-regression', job_type='train')
 
-    regressor = LandmarkRegressor(model)
-    regressor.lr = train_conf.optimizer.lr
+    regressor = LandmarkRegressor(model, learning_rate=train_conf.optimizer.lr)
     callbacks = [checkpoint_callback, early_stop_callback]
 
     dataset = LandmarkLocalizationDataset(directory=dataset_path, transform=transform)
@@ -60,6 +62,7 @@ if __name__ == "__main__":
                          max_epochs=train_conf.epochs,
                          logger=wandb_logger,
                          callbacks=callbacks,
+
                          )
 
     trainer.fit(regressor, train_loader, valid_loader)
