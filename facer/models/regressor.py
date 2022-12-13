@@ -8,7 +8,7 @@ import torch.nn as nn
 from facer.models.blocks import CoordConv2d
 
 
-class RegressionConnector(nn.Module):
+class RegressionLink(nn.Module):
 
     def __init__(self, input_channels: int, output_size: int, pool_size: int = 4, bias: bool = False):
         super().__init__()

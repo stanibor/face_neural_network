@@ -14,7 +14,7 @@ from facer.datasets.transforms import TO_TENSOR_TRANSFORM
 from facer.models.backbone import resnet_by_name
 from facer.models.landmarks import PyramidRegressionModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
-from facer.trainers.landmark_trainer import LandmarkRegressor
+from facer.trainers.trainers import LandmarkRegressor
 
 if __name__ == "__main__":
     conf = OmegaConf.load("params.yaml")

@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
-from facer.datasets.face_datasets import ImageDataset, LandmarkLocalizationDataset
+from facer.datasets.face_datasets import ImageDataset, LandmarkLocalizationDataset, SegmentationAndLandmarkDataset
 from torch.utils.data.dataset import random_split
 
 from facer.datasets.transforms import TO_TENSOR_TRANSFORM
@@ -29,10 +29,10 @@ class FaceSyntheticsModule(pl.LightningDataModule):
     def setup(self, stage=None):
         dataset = self._get_dataset(self.root, self.transform)
         generator = torch.Generator().manual_seed(self.seed)
-        train_len = 0.8 * len(dataset)
+        train_len = int(0.8 * len(dataset))
         valid_len = len(dataset) - train_len
         self.dataset_train, self.dataset_val = random_split(dataset, (train_len, valid_len), generator=generator)
-        self.dataset_test = self._get_dataset(self.root / "test")
+        self.dataset_test = self._get_dataset(self.root.parent / "test")
 
     @staticmethod
     def _get_dataset(root, transform=TO_TENSOR_TRANSFORM):
@@ -51,4 +51,11 @@ class FaceSyntheticsModule(pl.LightningDataModule):
 class LandmarkDataModule(FaceSyntheticsModule):
     @staticmethod
     def _get_dataset(root, transform=TO_TENSOR_TRANSFORM):
-        return LandmarkLocalizationDataset(root, transform)
+        return LandmarkLocalizationDataset(root, transform=transform)
+
+
+class MasksAndLandmarksDataModule(FaceSyntheticsModule):
+    @staticmethod
+    def _get_dataset(root, transform=TO_TENSOR_TRANSFORM):
+        return SegmentationAndLandmarkDataset(root, masks="bin_masks", transform=transform)
+

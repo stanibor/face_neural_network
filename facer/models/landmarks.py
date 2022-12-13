@@ -7,7 +7,7 @@ from torch import Tensor
 from torchvision.models import ResNet
 from facer.models.backbone import ResnetBackbone, DEFAULT_RESNET
 from facer.models.blocks import CoordConv2d
-from facer.models.regressor import RegressionConnector, PyramidPooler
+from facer.models.regressor import RegressionLink, PyramidPooler
 
 
 class LandmarkRegressionModel(nn.Module):
@@ -22,19 +22,19 @@ class LandmarkRegressionModel(nn.Module):
         self.output_shape = torch.Size(output_shape)
         self.hidden_channels = hidden_channels
         self.backbone = ResnetBackbone(backbone=backbone)
-        self.connector = self._connector_class()
         self.regressor = nn.Sequential(OrderedDict({
-            "connector": RegressionConnector(input_channels=self.hidden_channels,
-                                             output_size=self.hidden_channels * 4,
-                                             pool_size=pool_size),
+            "connector": self._connector_class(self.backbone.inplanes),
+            "link": RegressionLink(input_channels=self.hidden_channels,
+                                   output_size=self.hidden_channels * 4,
+                                   pool_size=pool_size),
             "bn1": nn.BatchNorm1d(self.hidden_channels * 4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             "dropout": nn.Dropout(dropout, inplace=False),
             "lrelu": nn.LeakyReLU(inplace=True),
             "fc": nn.Linear(self.hidden_channels * 4, self.output_shape.numel(), bias=True),
         }))
 
-    def _connector_class(self):
-        return CoordConv2d(in_channels=self.backbone.inplanes,
+    def _connector_class(self, input_size):
+        return CoordConv2d(in_channels=input_size,
                            out_channels=self.hidden_channels,
                            kernel_size=(3, 3),
                            padding=(1, 1),
@@ -42,7 +42,6 @@ class LandmarkRegressionModel(nn.Module):
 
     def _forward_impl(self, x: Tensor) -> Tensor:
         x = self.backbone(x)[0]
-        x = self.connector(x)
         x = self.regressor(x)
         return x.view(-1, *self.output_shape)
 
@@ -55,15 +54,14 @@ class PyramidRegressionModel(LandmarkRegressionModel):
         self.levels = levels
         super().__init__(*args, **kwargs)
 
-    def _connector_class(self):
-        return PyramidPooler(self.backbone.inplanes,
+    def _connector_class(self, input_size):
+        return PyramidPooler(input_size,
                              self.hidden_channels,
                              self.levels,
                              self.hidden_channels//2)
 
     def _forward_impl(self, x: Tensor) -> Tensor:
         x = self.backbone(x)[:self.levels]
-        x = self.connector(x)
         x = self.regressor(x)
         return x.view(-1, *self.output_shape)
 
