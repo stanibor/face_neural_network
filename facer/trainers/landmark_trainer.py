@@ -12,7 +12,6 @@ class LandmarkRegressor(pl.LightningModule):
         self.model = model
         self.lr = learning_rate
         self.weight_decay = weight_decay
-        self.current_epoch_training_losses = torch.zeros(2)
         self.mse = nn.MSELoss()
         self.nme = OcularNMELoss(ocular_indices=(36, 45))
 

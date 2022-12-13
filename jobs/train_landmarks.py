@@ -12,7 +12,7 @@ from pytorch_lightning.loggers import WandbLogger
 from facer.datasets.face_datasets import LandmarkLocalizationDataset
 from facer.datasets.transforms import TO_TENSOR_TRANSFORM
 from facer.models.backbone import resnet_by_name
-from facer.models.face_model import PyramidRegressionModel
+from facer.models.landmarks import PyramidRegressionModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
 from facer.trainers.landmark_trainer import LandmarkRegressor
 

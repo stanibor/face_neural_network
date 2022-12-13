@@ -1,17 +1,13 @@
-import math
 from collections import OrderedDict
 from typing import Union, Iterable
 
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torchvision.models import ResNet, resnet34, ResNet34_Weights
-from facer.models.backbone import ResnetBackbone
+from torchvision.models import ResNet
+from facer.models.backbone import ResnetBackbone, DEFAULT_RESNET
 from facer.models.blocks import CoordConv2d
 from facer.models.regressor import RegressionConnector, PyramidPooler
-
-DEFAULT_RESNET = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
-# DEFAULT_RESNET = resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
 
 
 class LandmarkRegressionModel(nn.Module):

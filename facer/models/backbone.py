@@ -3,6 +3,7 @@ from typing import Tuple, Optional
 
 from torch import Tensor
 import torch.nn as nn
+from torchvision.models import resnet34, ResNet34_Weights
 from torchvision.models.resnet import ResNet
 
 
@@ -29,13 +30,16 @@ class ResnetBackbone(nn.Module):
 
         self.inplanes = backbone.inplanes
 
-    def _forward_impl(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
-        x = x0 = self.start_conv(x)
+    def _forward_impl(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        x = self.start_conv(x)
         x = x1 = self.layer1(x)
         x = x2 = self.layer2(x)
         x = x3 = self.layer3(x)
         x = self.layer4(x)
-        return x, x3, x2, x1, x0
+        return x, x3, x2, x1
 
-    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         return self._forward_impl(x)
+
+
+DEFAULT_RESNET = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
