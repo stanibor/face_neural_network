@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import torch
+from pytorch_lightning.callbacks import LearningRateMonitor
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from omegaconf import OmegaConf
@@ -27,12 +28,12 @@ if __name__ == "__main__":
 
     backbone = resnet_by_name(**train_conf.model.backbone)
 
-    model = PyramidRegressionModel(backbone=backbone, output_shape=(70, 2), pool_size=train_conf.model.pool_size)
+    model = PyramidRegressionModel(backbone=backbone, output_shape=(70, 2), **train_conf.model.params)
 
     wandb_logger = WandbLogger(project='wandb-landmark-regression', job_type='train')
 
-    regressor = LandmarkRegressor(model, learning_rate=train_conf.optimizer.lr)
-    callbacks = [checkpoint_callback, early_stop_callback]
+    regressor = LandmarkRegressor(model, **train_conf.optimizer)
+    callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor()]
 
     dataset = LandmarkLocalizationDataset(directory=dataset_path, transform=transform)
     train_len = int(0.9 * len(dataset))

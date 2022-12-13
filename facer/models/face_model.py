@@ -7,6 +7,7 @@ import torch.nn as nn
 from torch import Tensor
 from torchvision.models import ResNet, resnet34, ResNet34_Weights
 from facer.models.backbone import ResnetBackbone
+from facer.models.blocks import CoordConv2d
 from facer.models.regressor import RegressionConnector, PyramidPooler
 
 DEFAULT_RESNET = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
@@ -37,11 +38,11 @@ class LandmarkRegressionModel(nn.Module):
         }))
 
     def _connector_class(self):
-        return nn.Conv2d(in_channels=self.backbone.inplanes,
-                         out_channels=self.hidden_channels,
-                         kernel_size=(3, 3),
-                         padding=(1, 1),
-                         bias=False)
+        return CoordConv2d(in_channels=self.backbone.inplanes,
+                           out_channels=self.hidden_channels,
+                           kernel_size=(3, 3),
+                           padding=(1, 1),
+                           bias=False)
 
     def _forward_impl(self, x: Tensor) -> Tensor:
         x = self.backbone(x)[0]
@@ -54,14 +55,18 @@ class LandmarkRegressionModel(nn.Module):
 
 
 class PyramidRegressionModel(LandmarkRegressionModel):
+    def __init__(self, *args, levels=2, **kwargs):
+        self.levels = levels
+        super().__init__(*args, **kwargs)
+
     def _connector_class(self):
         return PyramidPooler(self.backbone.inplanes,
                              self.hidden_channels,
-                             2,
+                             self.levels,
                              self.hidden_channels//2)
 
     def _forward_impl(self, x: Tensor) -> Tensor:
-        x = self.backbone(x)[:2]
+        x = self.backbone(x)[:self.levels]
         x = self.connector(x)
         x = self.regressor(x)
         return x.view(-1, *self.output_shape)

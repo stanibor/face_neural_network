@@ -6,11 +6,12 @@ from facer.trainers.utils import OcularNMELoss
 
 
 class LandmarkRegressor(pl.LightningModule):
-    def __init__(self, model: nn.Module, learning_rate = 1e-3):
+    def __init__(self, model: nn.Module, learning_rate=1e-3, weight_decay=0):
         super().__init__()
         self.save_hyperparameters()
         self.model = model
         self.lr = learning_rate
+        self.weight_decay = weight_decay
         self.current_epoch_training_losses = torch.zeros(2)
         self.mse = nn.MSELoss()
         self.nme = OcularNMELoss(ocular_indices=(36, 45))
@@ -51,10 +52,16 @@ class LandmarkRegressor(pl.LightningModule):
         return {'loss': loss, 'nme': nme}
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW([{"params": self.model.backbone.parameters(), "lr": self.lr*1e-1},
-                                       {"params": self.model.regressor.parameters()}], lr=self.lr)
+        optimizer = torch.optim.AdamW(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
         return [optimizer], [lr_scheduler]
+
+    # def configure_optimizers(self):
+    #     optimizer = torch.optim.AdamW([{"params": self.model.backbone.parameters(), "lr": self.lr*1e-1},
+    #                                    {"params": self.model.connector.parameters()},
+    #                                    {"params": self.model.regressor.parameters()}], lr=self.lr)
+    #     # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
+    #     return [optimizer]#, [lr_scheduler]
 
 
 
