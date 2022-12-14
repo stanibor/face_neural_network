@@ -1,16 +1,12 @@
 from pathlib import Path
 
-import torch
 from pytorch_lightning.callbacks import LearningRateMonitor
-from torch.utils.data import DataLoader
-from torch.utils.data.dataset import random_split
 from omegaconf import OmegaConf
 import pytorch_lightning as pl
 import albumentations as A
 from pytorch_lightning.loggers import WandbLogger
 
-from facer.datasets.face_datasets import LandmarkLocalizationDataset
-from facer.datasets.transforms import TO_TENSOR_TRANSFORM
+from facer.datasets.data_module import MasksAndLandmarksDataModule
 from facer.models.backbone import resnet_by_name
 from facer.models.landmarks import PyramidRegressionModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
@@ -33,30 +29,12 @@ if __name__ == "__main__":
     wandb_logger = WandbLogger(project='wandb-landmark-regression', job_type='train')
 
     regressor = LandmarkRegressor(model, **train_conf.optimizer)
+    checkpoint_callback.dirpath = '../model/landmarks'
     callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor()]
 
-    dataset = LandmarkLocalizationDataset(directory=dataset_path, transform=transform)
-    train_len = int(0.9 * len(dataset))
-    valid_len = len(dataset) - train_len
-    generator = torch.Generator().manual_seed(42)
-    train_dataset, valid_dataset = random_split(dataset, (train_len, valid_len), generator=generator)
-    test_dataset = LandmarkLocalizationDataset(directory=test_path, transform=TO_TENSOR_TRANSFORM)
+    data_module = MasksAndLandmarksDataModule(dataset_path, test_path, batch_size=train_conf.batch_size, seed=42)
+    data_module.setup()
 
-    train_loader = DataLoader(train_dataset,
-                              batch_size=train_conf.batch_size,
-                              num_workers=4,
-                              pin_memory=True,
-                              shuffle=True)
-    valid_loader = DataLoader(valid_dataset,
-                              batch_size=train_conf.batch_size,
-                              num_workers=4,
-                              pin_memory=True,
-                              shuffle=False)
-    test_dataloader = DataLoader(test_dataset,
-                                 batch_size=train_conf.batch_size,
-                                 num_workers=4,
-                                 pin_memory=True,
-                                 shuffle=False)
 
     trainer = pl.Trainer(check_val_every_n_epoch=2,
                          gpus=1,
@@ -66,8 +44,8 @@ if __name__ == "__main__":
                          accumulate_grad_batches=train_conf.grad_batches
                          )
 
-    trainer.fit(regressor, train_loader, valid_loader)
-    trainer.test(regressor, test_dataloader)
+    trainer.fit(regressor, data_module)
+    trainer.test(regressor, data_module)
 
 
 
