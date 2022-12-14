@@ -15,8 +15,8 @@ class LandmarkLogger(Callback):
     def _apply_landmarks(imgs, pred_landmarks, gt_landmarks):
         imgs = imgs.mul(255).byte()
         for x, ldmks, gt_ldmks in zip(imgs, pred_landmarks, gt_landmarks):
-            x[:] = torchvision.utils.draw_keypoints(x, gt_ldmks.unsqueeze(0), colors="#FF0000", radius=1)
-            x[:] = torchvision.utils.draw_keypoints(x, ldmks.unsqueeze(0), colors="#00FF00", radius=1)
+            x[:] = torchvision.utils.draw_keypoints(x, gt_ldmks.unsqueeze(0), colors="#00FF00", radius=1)
+            x[:] = torchvision.utils.draw_keypoints(x, ldmks.unsqueeze(0), colors="#FF0000", radius=1)
         return imgs.float().div_(255)
 
     def on_validation_epoch_end(self, trainer, pl_module):
