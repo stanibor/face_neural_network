@@ -103,5 +103,5 @@ class SegmentationAndLandmarkDataset(SegmentationDataset, LandmarkLocalizationDa
         mask = self._get_mask(index)
         landmarks = self._get_landmarks(index)
         item = self.transform(image=image, mask=mask, keypoints=landmarks)
-        return item['image'], item['mask'], torch.tensor(item['keypoints'])
+        return item['image'], item['mask'], torch.tensor(item['keypoints'], dtype=torch.float)
 
