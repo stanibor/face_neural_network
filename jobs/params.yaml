@@ -15,9 +15,9 @@ dataset:
     split: 0.1
 
 training:
-  epochs: 1
-  batch_size: 16
-  grad_batches: 8
+  epochs: 50
+  batch_size: 32
+  grad_batches: 4
   model:
     type: tight
     backbone:
