@@ -9,8 +9,8 @@ TO_TENSOR_TRANSFORM = A.Compose([A.ToFloat(), ToTensorV2()])
 
 def spatial_transforms(min_max_height: Tuple[int, int] = (300, 320), output_size: Tuple[int, int] = (256, 256)):
     transform = A.Compose([A.Rotate(limit=10, p=0.4),
-                           A.RandomSizedCrop(min_max_height, output_size[0], output_size[1]),
-                           A.HorizontalFlip(p=0.5)])
+                           A.RandomSizedCrop(min_max_height, output_size[0], output_size[1])])
+    # Horizontal Flip is causing an issue with keypoint annotations and should not be used
     return transform
 
 

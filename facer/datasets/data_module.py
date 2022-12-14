@@ -15,12 +15,14 @@ from facer.datasets.transforms import TO_TENSOR_TRANSFORM
 class FaceSyntheticsModule(pl.LightningDataModule):
     def __init__(self,
                  root: PathLike,
+                 test_root: PathLike = None,
                  transform: A.Compose = TO_TENSOR_TRANSFORM,
                  *,
                  batch_size=32,
                  seed: int = 42):
         super().__init__()
         self.root = Path(root)
+        self.test_root = self.root.parent / "test" if test_root is None else Path(test_root)
         self.batch_size = batch_size
         self.seed = seed
         self.transform = transform
@@ -32,7 +34,7 @@ class FaceSyntheticsModule(pl.LightningDataModule):
         train_len = int(0.8 * len(dataset))
         valid_len = len(dataset) - train_len
         self.dataset_train, self.dataset_val = random_split(dataset, (train_len, valid_len), generator=generator)
-        self.dataset_test = self._get_dataset(self.root.parent / "test")
+        self.dataset_test = self._get_dataset(self.test_root)
 
     @staticmethod
     def _get_dataset(root, transform=TO_TENSOR_TRANSFORM):

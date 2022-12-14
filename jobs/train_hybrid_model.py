@@ -24,7 +24,6 @@ if __name__ == "__main__":
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
 
     backbone = resnet_by_name(**train_conf.model.backbone)
-
     model = TightlyCoupledFaceModel(backbone=backbone, output_shape=(70, 2), **train_conf.model.params)
 
     wandb_logger = WandbLogger(project='wandb-face-mask-and-points', job_type='train')
@@ -32,7 +31,7 @@ if __name__ == "__main__":
     regressor = CoupledSegmentationRegressor(model, **train_conf.optimizer)
     callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor()]
 
-    data_module = MasksAndLandmarksDataModule(dataset_path, batch_size=train_conf.batch_size, seed=42)
+    data_module = MasksAndLandmarksDataModule(dataset_path, test_path, batch_size=train_conf.batch_size, seed=42)
     data_module.setup()
 
     trainer = pl.Trainer(check_val_every_n_epoch=2,

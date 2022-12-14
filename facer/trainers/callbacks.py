@@ -7,7 +7,7 @@ early_stop_callback = EarlyStopping(
    mode='min'
 )
 
-MODEL_CKPT_PATH = 'model/'
+MODEL_CKPT_PATH = '../model/'
 MODEL_CKPT = 'model-{epoch:02d}-{val_loss:.5f}'
 
 checkpoint_callback = ModelCheckpoint(monitor='val_loss',

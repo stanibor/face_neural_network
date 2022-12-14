@@ -87,6 +87,7 @@ stages:
       - dataset.transform
     deps:
       - make_transform_jsons.py
+      - ../facer/datasets/transforms.py
       - transforms/photometric.json
     outs:
       - transforms/transform.json
