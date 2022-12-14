@@ -11,6 +11,7 @@ from facer.models.backbone import resnet_by_name
 from facer.models.landmarks import PyramidRegressionModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
 from facer.trainers.trainers import LandmarkRegressor
+from facer.trainers.visualisation_callbacks import LandmarkLogger
 
 if __name__ == "__main__":
     conf = OmegaConf.load("params.yaml")
@@ -30,11 +31,14 @@ if __name__ == "__main__":
 
     regressor = LandmarkRegressor(model, **train_conf.optimizer)
     checkpoint_callback.dirpath = '../model/landmarks'
-    callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor()]
 
     data_module = MasksAndLandmarksDataModule(dataset_path, test_path, batch_size=train_conf.batch_size, seed=42)
     data_module.setup()
 
+    val_images, val_landmarks = next(iter(data_module.val_dataloader()))
+    image_logger = LandmarkLogger((val_images, val_landmarks))
+    callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor(), image_logger]
+    callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor()]
 
     trainer = pl.Trainer(check_val_every_n_epoch=2,
                          gpus=1,

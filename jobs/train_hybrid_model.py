@@ -26,7 +26,8 @@ if __name__ == "__main__":
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
 
     backbone = resnet_by_name(**train_conf.model.backbone)
-    model = TightlyCoupledFaceModel(backbone=backbone, output_shape=(70, 2), **train_conf.model.params)
+    model_type = model_type_dict[train_conf.model.type]
+    model = model_type(backbone=backbone, output_shape=(70, 2), **train_conf.model.params)
 
     wandb_logger = WandbLogger(project='wandb-face-mask-and-points', job_type='train')
 
@@ -35,8 +36,8 @@ if __name__ == "__main__":
     data_module = MasksAndLandmarksDataModule(dataset_path, test_path, batch_size=train_conf.batch_size, seed=42)
     data_module.setup()
 
-    batch = next(iter(data_module.val_dataloader()))
-    image_logger = FaceImagesLogger(batch)
+    val_images, _, val_landmarks = next(iter(data_module.val_dataloader()))
+    image_logger = FaceImagesLogger((val_images, val_landmarks))
     callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor(), image_logger]
 
     trainer = pl.Trainer(check_val_every_n_epoch=2,
