@@ -8,10 +8,12 @@ from pytorch_lightning.loggers import WandbLogger
 
 from facer.datasets.data_module import MasksAndLandmarksDataModule
 from facer.models.backbone import resnet_by_name
-from facer.models.hybrid import TightlyCoupledFaceModel
+from facer.models.hybrid import TightlyCoupledFaceModel, CoupledFaceModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
 from facer.trainers.trainers import CoupledSegmentationRegressor
 from facer.trainers.visualisation_callbacks import FaceImagesLogger
+
+model_type_dict = {"tight": TightlyCoupledFaceModel, "loose": CoupledFaceModel}
 
 if __name__ == "__main__":
     conf = OmegaConf.load("params.yaml")
@@ -29,10 +31,13 @@ if __name__ == "__main__":
     wandb_logger = WandbLogger(project='wandb-face-mask-and-points', job_type='train')
 
     regressor = CoupledSegmentationRegressor(model, **train_conf.optimizer)
-    callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor()]
 
     data_module = MasksAndLandmarksDataModule(dataset_path, test_path, batch_size=train_conf.batch_size, seed=42)
     data_module.setup()
+
+    batch = next(iter(data_module.val_dataloader()))
+    image_logger = FaceImagesLogger(batch)
+    callbacks = [checkpoint_callback, early_stop_callback, LearningRateMonitor(), image_logger]
 
     trainer = pl.Trainer(check_val_every_n_epoch=2,
                          gpus=1,
