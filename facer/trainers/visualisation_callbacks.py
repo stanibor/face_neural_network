@@ -13,7 +13,7 @@ class LandmarkLogger(Callback):
 
     @staticmethod
     def _apply_landmarks(imgs, pred_landmarks, gt_landmarks):
-        imgs = imgs.div(255).byte()
+        imgs = imgs.mul(255).byte()
         for x, ldmks, gt_ldmks in zip(imgs, pred_landmarks, gt_landmarks):
             x[:] = torchvision.utils.draw_keypoints(x, gt_ldmks.unsqueeze(0), colors="#FF0000", radius=1)
             x[:] = torchvision.utils.draw_keypoints(x, ldmks.unsqueeze(0), colors="#00FF00", radius=1)
@@ -34,7 +34,7 @@ class LandmarkLogger(Callback):
 
 
 class FaceImagesLogger(LandmarkLogger):
-    def __init__(self, *args, mask_color = (0., 0, 1.), **kwargs):
+    def __init__(self, *args, mask_color=(0., 0, 1.), **kwargs):
         super().__init__(*args, **kwargs)
         self.mask_color = torch.tensor(mask_color).view(1, 3, 1, 1)
 
