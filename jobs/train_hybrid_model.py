@@ -33,7 +33,10 @@ if __name__ == "__main__":
 
     regressor = CoupledSegmentationRegressor(model, **train_conf.optimizer)
 
-    data_module = MasksAndLandmarksDataModule(dataset_path, test_path, batch_size=train_conf.batch_size, seed=42)
+    data_module = MasksAndLandmarksDataModule(dataset_path, test_path,
+                                              batch_size=train_conf.batch_size,
+                                              seed=42,
+                                              transform=transform)
     data_module.setup()
 
     val_images, _, val_landmarks = next(iter(data_module.val_dataloader()))

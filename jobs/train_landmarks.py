@@ -32,7 +32,10 @@ if __name__ == "__main__":
     regressor = LandmarkRegressor(model, **train_conf.optimizer)
     checkpoint_callback.dirpath = '../model/landmarks'
 
-    data_module = LandmarkDataModule(dataset_path, test_path, batch_size=train_conf.batch_size, seed=42)
+    data_module = LandmarkDataModule(dataset_path, test_path,
+                                              batch_size=train_conf.batch_size,
+                                              seed=42,
+                                              transform=transform)
     data_module.setup()
 
     val_images, val_landmarks = next(iter(data_module.val_dataloader()))
