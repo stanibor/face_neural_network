@@ -34,9 +34,10 @@ class LandmarkLogger(Callback):
 
 
 class FaceImagesLogger(LandmarkLogger):
-    def __init__(self, *args, mask_color=(0., 0, 1.), **kwargs):
+    def __init__(self, *args, mask_color=(0., 0, 1.), mask_alpha=0.5, **kwargs):
         super().__init__(*args, **kwargs)
         self.mask_color = torch.tensor(mask_color).view(1, 3, 1, 1)
+        self.mask_alpha = mask_alpha
 
     def on_validation_epoch_end(self, trainer, pl_module):
         # Bring the tensors to CPU
@@ -48,7 +49,7 @@ class FaceImagesLogger(LandmarkLogger):
         output = pl_module(val_imgs)
         masks, landmarks = output
 
-        val_imgs = torch.lerp(val_imgs, mask_color, masks)
+        val_imgs = torch.lerp(val_imgs, mask_color, masks * self.mask_alpha)
         landmarks = landmarks.add(1).mul(resolution / 2)
         n = self.num_samples
         # Log the images as wandb Image
