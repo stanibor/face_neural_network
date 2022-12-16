@@ -19,9 +19,9 @@ if __name__ == "__main__":
     conf = OmegaConf.load("params.yaml")
     dataset_conf = conf.dataset
     train_conf = conf.training
-    transform = A.load("transforms/transform.json")
     dataset_path = Path("../data/datasets") / dataset_conf.directory
     test_path = Path("../data/datasets") / conf.dataset.test.name
+    transform = A.load("transforms/transform.json")
     keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
 
