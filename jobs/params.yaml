@@ -16,10 +16,10 @@ dataset:
 
 training:
   epochs: 50
-  batch_size: 32
-  grad_batches: 4
+  batch_size: 64
+  grad_batches: 2
   model:
-    type: tight
+    type: loose
     backbone:
       name: resnet34
       weights: IMAGENET1K_V1
@@ -28,5 +28,5 @@ training:
       levels: 2
       hidden_channels: 1024
   optimizer:
-    learning_rate: 1e-3
+    learning_rate: 2e-4
     weight_decay: 1e-3

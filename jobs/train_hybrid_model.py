@@ -29,7 +29,7 @@ if __name__ == "__main__":
     model_type = model_type_dict[train_conf.model.type]
     model = model_type(backbone=backbone, output_shape=(70, 2), **train_conf.model.params)
 
-    wandb_logger = WandbLogger(project='wandb-face-mask-and-points', job_type='train')
+    wandb_logger = WandbLogger(project='gsn-face-mask-and-points', job_type='train')
 
     regressor = CoupledSegmentationRegressor(model, **train_conf.optimizer)
 
