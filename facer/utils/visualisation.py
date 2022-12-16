@@ -20,4 +20,4 @@ def apply_masks(imgs: Tensor,
                 alpha: float = 0.5) -> Tensor:
     mask_color = mask_color.view(1, 3, 1, 1)
     val_imgs = torch.lerp(imgs, mask_color, masks * alpha)
-    return imgs.float().div_(255)
+    return val_imgs
