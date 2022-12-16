@@ -137,13 +137,13 @@ class CoupledSegmentationRegressor(LandmarkRegressor):
     def on_validation_epoch_end(self):
         super().on_validation_epoch_end()
         val_f1 = self.val_f1.compute()
-        self.log('val_f1', val_f1)
+        self.log('val_f1', val_f1.item())
         self.val_f1.reset()
 
     def on_test_epoch_end(self):
         super().on_validation_epoch_end()
         test_f1 = self.test_f1.compute()
-        self.log('test_f1', test_f1)
+        self.log('test_f1', test_f1.item())
         self.test_f1.reset()
 
 
