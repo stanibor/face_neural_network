@@ -20,7 +20,7 @@ if __name__ == "__main__":
     dataset_conf = conf.dataset
     train_conf = conf.training
     dataset_path = Path("../data/datasets") / dataset_conf.directory
-    test_path = Path("../data/datasets") / conf.dataset.test.name
+    test_path = Path("../data/datasets") / Path(train_conf.test_dataset.directory)
     transform = A.load("transforms/transform.json")
     keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)

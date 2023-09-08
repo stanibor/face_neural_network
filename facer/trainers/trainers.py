@@ -20,11 +20,9 @@ class FaceModel(pl.LightningModule, ABC):
     def compute_losses(self, x, y):
         pass
 
-    @abstractmethod
     def update_validation_metrics(self, outputs, gt):
         pass
 
-    @abstractmethod
     def update_test_metrics(self, outputs, gt):
         pass
 

@@ -30,3 +30,5 @@ training:
   optimizer:
     learning_rate: 2e-4
     weight_decay: 1e-3
+  test_dataset:
+    directory: ibugmasks/test

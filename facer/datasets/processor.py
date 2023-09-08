@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, random_split
 import torchvision.transforms.functional as TF
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from facer.datasets.face_datasets import SegmentationAndLandmarkDataset, ImageDataset
 from facer.datasets.transforms import TO_TENSOR_TRANSFORM
