@@ -5,11 +5,11 @@ import torch.nn as nn
 import pytorch_lightning as pl
 import torchmetrics
 
-from facer.trainers.utils import OcularNMELoss
+from facer.trainers.losses import OcularNMELoss
 
 
 class FaceModel(pl.LightningModule, ABC):
-    def __init__(self, model: nn.Module, learning_rate=1e-3, weight_decay=0):
+    def __init__(self, model: nn.Module, learning_rate=1e-3, weight_decay=0, **kwargs):
         super().__init__()
         self.save_hyperparameters(ignore=['model'])
         self.model = model
@@ -89,12 +89,15 @@ class LandmarkRegressor(FaceModel):
 
 
 class CoupledSegmentationRegressor(LandmarkRegressor):
-    def __init__(self, model: nn.Module, *args, mse_weight=1., **kwargs):
+    def __init__(self, model: nn.Module, *args, mse_weight=1., bce_weight=1., **kwargs):
         super().__init__(model, *args, **kwargs)
         self.mse_weight = mse_weight
+        self.bce_weight = bce_weight
         self.bce = nn.BCELoss()
         self.val_f1 = torchmetrics.F1Score(task='binary')
         self.test_f1 = torchmetrics.F1Score(task='binary')
+        self.val_jaccard = torchmetrics.JaccardIndex(task='binary')
+        self.test_jaccard = torchmetrics.JaccardIndex(task='binary')
 
     def compute_losses(self, x, y):
         p_masks, p_ldmks = x
@@ -102,7 +105,7 @@ class CoupledSegmentationRegressor(LandmarkRegressor):
         bce = self.bce(p_masks, masks)
         mse = self.mse(p_ldmks, ldmks)
         nme = self.nme(p_ldmks, ldmks)
-        loss = (self.mse_weight * mse) + bce
+        loss = (self.mse_weight * mse) + (self.bce_weight * bce)
         return loss, mse, nme, bce
 
     def common_step(self, batch, batch_idx):
@@ -126,23 +129,31 @@ class CoupledSegmentationRegressor(LandmarkRegressor):
         masks, _ = outputs
         gt_masks, _ = gt
         self.val_f1.update(masks, gt_masks)
+        self.val_jaccard.update(masks, gt_masks)
 
     def update_test_metrics(self, outputs, gt):
         masks, _ = outputs
         gt_masks, _ = gt
         self.test_f1.update(masks, gt_masks)
+        self.test_jaccard.update(masks, gt_masks)
 
     def on_validation_epoch_end(self):
         super().on_validation_epoch_end()
         val_f1 = self.val_f1.compute()
+        val_jaccard = self.val_jaccard.compute()
         self.log('val_f1', val_f1.item())
+        self.log('val_jaccard', val_jaccard.item())
         self.val_f1.reset()
+        self.val_jaccard.reset()
 
     def on_test_epoch_end(self):
         super().on_validation_epoch_end()
         test_f1 = self.test_f1.compute()
+        test_jaccard = self.test_jaccard.compute()
         self.log('test_f1', test_f1.item())
+        self.log('test_jaccard', test_jaccard.item())
         self.test_f1.reset()
+        self.test_jaccard.reset()
 
 
 

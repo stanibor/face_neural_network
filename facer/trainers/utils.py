@@ -1,21 +1,22 @@
-from typing import Tuple
+from typing import Dict, Union
 
 import torch
-import torch.nn as nn
+
+from facer.models.backbone import resnet_by_name
 
 
-class OcularNMELoss(nn.Module):
-    def __init__(self, ocular_indices: Tuple[int, int]):
-        super().__init__()
-        self.ocular_indices = torch.tensor(ocular_indices)
+def load_model_from_training_checkpoint(checkpoint_path: Dict, device: Union[torch.device, str]="cpu"):
+    checkpoint = torch.load(checkpoint_path)
+    hparams = checkpoint['hyper_parameters']
+    model_type = hparams['model_type']
 
-    def ocular_distances(self, landmarks):
-        self.ocular_indices = self.ocular_indices.to(landmarks.device)
-        eyes = landmarks.index_select(-2, self.ocular_indices)
-        eyes.select(-2, 0).mul_(-1)
-        return eyes.sum(-2).pow(2).sum(-1).sqrt()
+    model_params = {k: hparams[k] for k in ('pool_size', 'levels', 'hidden_channels')}
+    backbone = resnet_by_name(hparams['backbone_'])
 
-    def forward(self, x, y):
-        dists = self.ocular_distances(y)
-        point_distances = (y - x).pow(2).sum(-1).sqrt()
-        return point_distances.sum(-1).div_(dists).mean()
+    model = model_type(output_shape=(68, 2), backbone=backbone, **model_params).to(device)
+    best_state = checkpoint['state_dict']
+    best_state = {k.replace('model.', ''): v for k, v in best_state.items()}
+    # best_state = torch.load("best_model_state.pt")
+    model.load_state_dict(best_state)
+
+    return model

@@ -157,6 +157,19 @@ class FaceDatasetProcessor:
             for name, byte_mask in zip(names, byte_masks):
                 PIL.Image.fromarray(byte_mask.numpy()).save(name)
 
+    def slice_landmarks(self,
+                        new_landmarks=Path("processed_landmarks"),
+                        start:int=0,
+                        end:int=None):
+        output_directory = self.dataset_paths.directory / new_landmarks
+        output_directory.mkdir(parents=True, exist_ok=True)
+        old_landmarks_files = sorted(self.dataset_paths.landmarks_directory.glob("*.txt"))
+        for ldmk_path in self._tqdm(old_landmarks_files):
+            new_ldmk_path = output_directory / ldmk_path.name
+            new_landmarks = np.genfromtxt(ldmk_path, dtype='float32')[start:end]
+            np.savetxt(str(new_ldmk_path), new_landmarks, fmt="%.3f")
+
+
     def transform_dataset(self,
                           transform_json: PathLike,
                           *,

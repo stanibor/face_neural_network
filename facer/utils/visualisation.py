@@ -1,16 +1,21 @@
-from typing import Optional
+from typing import Optional, List, Tuple
 
 import torch
 import torchvision
 from torch import Tensor
 
 
-def apply_landmarks(imgs: Tensor, pred_landmarks: Tensor, gt_landmarks: Optional[Tensor] = None) -> Tensor:
+def apply_landmarks(imgs: Tensor,
+                    pred_landmarks: Tensor,
+                    gt_landmarks: Optional[Tensor] = None,
+                    connectivity: Optional[List[Tuple[int, int]]] = None) -> Tensor:
     imgs = imgs.mul(255).byte()
     gt_landmarks = torch.full_like(pred_landmarks, -1.) if gt_landmarks is None else gt_landmarks
     for x, ldmks, gt_ldmks in zip(imgs, pred_landmarks, gt_landmarks):
-        x[:] = torchvision.utils.draw_keypoints(x, gt_ldmks.unsqueeze(0), colors="#00FF00", radius=1)
-        x[:] = torchvision.utils.draw_keypoints(x, ldmks.unsqueeze(0), colors="#FF0000", radius=1)
+        x[:] = torchvision.utils.draw_keypoints(x, gt_ldmks.unsqueeze(0), connectivity=connectivity,
+                                                colors="#00FF00", radius=2, width=1)
+        x[:] = torchvision.utils.draw_keypoints(x, ldmks.unsqueeze(0), connectivity=connectivity,
+                                                colors="#FF0000", radius=2, width=1)
     return imgs.float().div_(255)
 
 

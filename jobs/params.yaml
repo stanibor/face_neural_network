@@ -6,7 +6,7 @@ dataset:
   transform:
     seed: 42
     crop:
-      min: 300
+      min: 256
       max: 320
     resize: 256
   test:
@@ -16,7 +16,7 @@ dataset:
 
 training:
   epochs: 50
-  batch_size: 64
+  batch_size: 32
   grad_batches: 2
   model:
     type: loose
@@ -30,5 +30,30 @@ training:
   optimizer:
     learning_rate: 2e-4
     weight_decay: 1e-3
+    mse_weight: 1.0
+    bce_weight: 1.0
   test_dataset:
-    directory: ibugmasks/test
+    directory: test
+
+fine_tunning:
+  epochs: 64
+  batch_size: 32
+  grad_batches: 2
+  freeze_backbone: 1
+  optimizer:
+    learning_rate: 1e-5
+    weight_decay: 1e-3
+    mse_weight: 1.0
+    bce_weight: 1.0
+  train_dataset:
+    directory: ibugmask/train
+  test_dataset:
+    directory:  ibugmask/test
+
+label_adaptation:
+  train_dataset:
+    directory: ibugmask/train
+  test_dataset:
+    directory: ibugmask/test
+
+

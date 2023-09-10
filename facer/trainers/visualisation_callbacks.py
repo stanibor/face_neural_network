@@ -7,9 +7,10 @@ from facer.utils.visualisation import apply_landmarks, apply_masks
 
 
 class LandmarkLogger(Callback):
-    def __init__(self, val_samples, num_samples=32):
+    def __init__(self, val_samples, num_samples=32, connectivity=None):
         super().__init__()
         self.num_samples = num_samples
+        self.connectivity = connectivity
         self.val_imgs, self.gt_landmarks = val_samples
         self.resolution = self.gt_landmarks.new_tensor(self.val_imgs.shape[-2:])
 
@@ -23,7 +24,7 @@ class LandmarkLogger(Callback):
         landmarks = output.add(1).mul(resolution / 2)
         n = self.num_samples
         # Log the images as wandb Image
-        val_imgs = apply_landmarks(val_imgs[:n], landmarks[:n], gt_landmarks[:n])
+        val_imgs = apply_landmarks(val_imgs[:n], landmarks[:n], gt_landmarks[:n], connectivity=self.connectivity)
         trainer.logger.experiment.log({"examples": [wandb.Image(val_img) for val_img in val_imgs]})
 
 
@@ -47,5 +48,5 @@ class FaceImagesLogger(LandmarkLogger):
         n = self.num_samples
         # Log the images as wandb Image
         val_imgs = apply_masks(val_imgs, masks, mask_color, self.mask_alpha)
-        val_imgs = apply_landmarks(val_imgs[:n], landmarks[:n], gt_landmarks[:n])
+        val_imgs = apply_landmarks(val_imgs[:n], landmarks[:n], gt_landmarks[:n], connectivity=self.connectivity)
         trainer.logger.experiment.log({"examples": [wandb.Image(val_img) for val_img in val_imgs]})
