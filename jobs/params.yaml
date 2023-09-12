@@ -25,7 +25,7 @@ training:
       weights: IMAGENET1K_V1
     params:
       pool_size: 2
-      levels: 2
+      levels: 1
       hidden_channels: 1024
   optimizer:
     learning_rate: 2e-4
@@ -36,7 +36,7 @@ training:
     directory: test
 
 fine_tunning:
-  epochs: 64
+  epochs: 256
   batch_size: 32
   grad_batches: 2
   freeze_backbone: 1

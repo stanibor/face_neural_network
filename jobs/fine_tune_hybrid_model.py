@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     test_images, _, test_landmarks = next(iter(data_module.test_dataloader()))
     image_logger = FaceImagesLogger((test_images, test_landmarks), connectivity=FaceIndices300W.connectivity)
-    callbacks = [experiment_checkpoint_callback, early_stop_callback, LearningRateMonitor(), image_logger]
+    callbacks = [experiment_checkpoint_callback, LearningRateMonitor(), image_logger]
 
     trainer = pl.Trainer(check_val_every_n_epoch=2,
                          #gpus=1,

@@ -8,6 +8,7 @@ import albumentations as A
 from pytorch_lightning.loggers import WandbLogger
 
 from facer.datasets.data_module import MasksAndLandmarksDataModule
+from facer.datasets.transforms import TO_TENSOR_TRANSFORM
 from facer.models.backbone import resnet_by_name
 from facer.models.hybrid import TightlyCoupledFaceModel, CoupledFaceModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
@@ -50,8 +51,10 @@ if __name__ == "__main__":
     # val_images, _, val_landmarks = next(iter(data_module.val_dataloader()))
     test_images, _, test_landmarks = next(iter(data_module.test_dataloader()))
     image_logger = FaceImagesLogger((test_images, test_landmarks), connectivity=FaceIndices300W.connectivity)
-    callbacks = [experiment_checkpoint_callback, early_stop_callback, LearningRateMonitor(), image_logger]
 
+    data_module.dataset_val.transform = A.Compose([A.Resize(*test_images.shape[:-2]), *TO_TENSOR_TRANSFORM])
+
+    callbacks = [experiment_checkpoint_callback, early_stop_callback, LearningRateMonitor(), image_logger]
     trainer = pl.Trainer(check_val_every_n_epoch=2,
                          #gpus=1,
                          accelerator='gpu',
