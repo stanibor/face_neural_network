@@ -51,9 +51,15 @@ fine_tunning:
     directory:  ibugmask/test
 
 label_adaptation:
+  epochs: 256
+  batch_size: 32
+  grad_batches: 2
   train_dataset:
     directory: ibugmask/train
   test_dataset:
     directory: ibugmask/test
+  optimizer:
+    learning_rate: 2e-4
+    weight_decay: 1e-3
 
 
