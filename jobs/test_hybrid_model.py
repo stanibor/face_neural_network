@@ -1,3 +1,4 @@
+import argparse
 import shutil
 from pathlib import Path
 
@@ -9,16 +10,27 @@ from pytorch_lightning.loggers import WandbLogger
 
 from facer.datasets.data_module import MasksAndLandmarksDataModule
 from facer.datasets.transforms import TO_TENSOR_TRANSFORM
-from facer.models.backbone import resnet_by_name
 from facer.models.hybrid import TightlyCoupledFaceModel, CoupledFaceModel
 from facer.trainers.callbacks import checkpoint_callback, early_stop_callback
 from facer.trainers.trainers import CoupledSegmentationRegressor
+from facer.trainers.utils import load_model_from_training_checkpoint
 from facer.trainers.visualisation_callbacks import FaceImagesLogger
 from facer.utils.faces import FaceIndices300W
 
 model_type_dict = {"tight": TightlyCoupledFaceModel, "loose": CoupledFaceModel}
 
+
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_path", type=str)
+    args = parser.parse_args()
+
+    model_path = Path(args.model_path)
+    assert model_path.exists(), f"No path to model exists: {model_path.absolute()}"
+    if model_path.is_dir():
+        model_path = model_path / "model-best.ckpt"
+
     conf = OmegaConf.load("params.yaml")
     dataset_conf = conf.dataset
     train_conf = conf.training
@@ -28,19 +40,14 @@ if __name__ == "__main__":
     keypoint_params = A.KeypointParams(format="xy", remove_invisible=False)
     transform = A.Compose(transform.transforms, keypoint_params=keypoint_params)
 
-    backbone = resnet_by_name(**train_conf.model.backbone)
-    model_type = model_type_dict[train_conf.model.type]
-    model = model_type(backbone=backbone, output_shape=(68, 2), **train_conf.model.params)
+    experiment = model_path.parent.name
+    experiment_name = experiment+"-tested"
+    model = load_model_from_training_checkpoint(model_path)
 
-    wandb_logger = WandbLogger(project='pmgr-face-mask-and-points', job_type='train')
-
-    experiment_checkpoint_callback = checkpoint_callback(wandb_logger.experiment.name)
+    model.eval()
 
     regressor = CoupledSegmentationRegressor(model, **train_conf.optimizer,
-                                             backbone_=train_conf.model.backbone.name,
-                                             model_type=model_type,
-                                             **train_conf.model.params,
-                                             )
+                                             tunned_model=experiment)
 
     data_module = MasksAndLandmarksDataModule(dataset_path, test_path,
                                               batch_size=train_conf.batch_size,
@@ -48,28 +55,13 @@ if __name__ == "__main__":
                                               transform=transform)
     data_module.setup()
 
-    # val_images, _, val_landmarks = next(iter(data_module.val_dataloader()))
-    test_images, _, test_landmarks = next(iter(data_module.test_dataloader()))
-    image_logger = FaceImagesLogger((test_images, test_landmarks), connectivity=FaceIndices300W.connectivity)
-
-    data_module.dataset_val.transform = A.Compose([A.Resize(*test_images.shape[:-2]), *TO_TENSOR_TRANSFORM])
-
-    callbacks = [experiment_checkpoint_callback, early_stop_callback, LearningRateMonitor(), image_logger]
     trainer = pl.Trainer(check_val_every_n_epoch=2,
                          #gpus=1,
                          accelerator='gpu',
                          max_epochs=train_conf.epochs,
-                         logger=wandb_logger,
-                         callbacks=callbacks,
-                         accumulate_grad_batches=train_conf.grad_batches
                          )
 
-    trainer.fit(regressor, data_module)
-    best_ckpt = Path(trainer.checkpoint_callback.best_model_path)
-    new_best_ckpt = best_ckpt.parent / "model-best.ckpt"
-    shutil.copyfile(best_ckpt, new_best_ckpt)
     trainer.test(regressor, data_module)
-    trainer.test(regressor, data_module, ckpt_path=str(best_ckpt))
 
 
 
