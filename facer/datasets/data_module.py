@@ -6,7 +6,8 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
-from facer.datasets.face_datasets import ImageDataset, LandmarkLocalizationDataset, SegmentationAndLandmarkDataset
+from facer.datasets.face_datasets import ImageDataset, LandmarkLocalizationDataset, SegmentationAndLandmarkDataset, \
+    SegmentationDataset
 from torch.utils.data.dataset import random_split
 
 from facer.datasets.transforms import TO_TENSOR_TRANSFORM
@@ -54,6 +55,12 @@ class LandmarkDataModule(FaceSyntheticsModule):
     @staticmethod
     def _get_dataset(root, transform=TO_TENSOR_TRANSFORM):
         return LandmarkLocalizationDataset(root, transform=transform)
+
+
+class MasksDataModule(FaceSyntheticsModule):
+    @staticmethod
+    def _get_dataset(root, transform=TO_TENSOR_TRANSFORM):
+        return SegmentationDataset(root, masks="bin_masks", transform=transform)
 
 
 class MasksAndLandmarksDataModule(FaceSyntheticsModule):

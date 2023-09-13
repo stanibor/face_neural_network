@@ -88,6 +88,61 @@ class LandmarkRegressor(FaceModel):
         self.log(f'{stage}_nme', nme, on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
 
+class MaskSegmentator(FaceModel):
+    def __init__(self, model: nn.Module, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.bce = nn.BCELoss()
+        self.val_f1 = torchmetrics.F1Score(task='binary')
+        self.test_f1 = torchmetrics.F1Score(task='binary')
+        self.val_jaccard = torchmetrics.JaccardIndex(task='binary')
+        self.test_jaccard = torchmetrics.JaccardIndex(task='binary')
+
+    def compute_losses(self, x, y):
+        return (self.bce(x, y),)
+
+    def common_step(self, batch, batch_idx):
+        imgs, masks = batch
+        masks = masks.div(255).unsqueeze(-3)
+        outputs = self(imgs)
+        losses = self.compute_losses(outputs, masks)
+        return losses, outputs, masks
+
+    def _log_losses(self, losses, stage: str):
+        loss = losses[0]
+        self.log(f'{stage}_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+
+    def update_validation_metrics(self, outputs, gt):
+        masks = outputs
+        gt_masks = gt
+        self.val_f1.update(masks, gt_masks)
+        self.val_jaccard.update(masks, gt_masks)
+
+    def update_test_metrics(self, outputs, gt):
+        masks = outputs
+        gt_masks = gt
+        self.test_f1.update(masks, gt_masks)
+        self.test_jaccard.update(masks, gt_masks)
+
+    def on_validation_epoch_end(self):
+        super().on_validation_epoch_end()
+        val_f1 = self.val_f1.compute()
+        val_jaccard = self.val_jaccard.compute()
+        self.log('val_f1', val_f1.item())
+        self.log('val_jaccard', val_jaccard.item())
+        self.val_f1.reset()
+        self.val_jaccard.reset()
+
+    def on_test_epoch_end(self):
+        super().on_validation_epoch_end()
+        test_f1 = self.test_f1.compute()
+        test_jaccard = self.test_jaccard.compute()
+        self.log('test_f1', test_f1.item())
+        self.log('test_jaccard', test_jaccard.item())
+        self.test_f1.reset()
+        self.test_jaccard.reset()
+
+
+
 class CoupledSegmentationRegressor(LandmarkRegressor):
     def __init__(self, model: nn.Module, *args, mse_weight=1., bce_weight=1., **kwargs):
         super().__init__(model, *args, **kwargs)

@@ -2,6 +2,7 @@ import argparse
 import shutil
 from pathlib import Path
 
+import torch
 from pytorch_lightning.callbacks import LearningRateMonitor
 from omegaconf import OmegaConf
 import pytorch_lightning as pl
@@ -43,6 +44,9 @@ if __name__ == "__main__":
     experiment = model_path.parent.name
     experiment_name = experiment+"-fine-tunned"
     model = load_model_from_training_checkpoint(model_path)
+
+    hparams = torch.load(model_path)['hyper_parameters']
+    fine_tune_conf.optimizer.update({k: hparams.get(k, 1.0) for k in ("mse_weight", "bce_weight")})
 
     freeze_backbone = False if fine_tune_conf.freeze_backbone=="False" else bool(fine_tune_conf.freeze_backbone)
 

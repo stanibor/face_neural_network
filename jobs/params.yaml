@@ -25,7 +25,7 @@ training:
       weights: IMAGENET1K_V1
     params:
       pool_size: 2
-      levels: 1
+      levels: 2
       hidden_channels: 1024
   optimizer:
     learning_rate: 2e-4
@@ -43,8 +43,6 @@ fine_tunning:
   optimizer:
     learning_rate: 1e-5
     weight_decay: 1e-3
-    mse_weight: 1.0
-    bce_weight: 1.0
   train_dataset:
     directory: ibugmask/train
   test_dataset:

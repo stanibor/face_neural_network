@@ -18,7 +18,7 @@ class UnetDecoder(nn.Module):
         self.layer3 = nn.Sequential(DoubleConv(inplanes >> 1, inplanes >> 2),
                                     nn.ConvTranspose2d(inplanes >> 2, inplanes >> 3, kernel_size=2, stride=2))
         self.layer4 = nn.Sequential(DoubleConv(inplanes >> 2, inplanes >> 3),
-                                    nn.LeakyReLU(inplace=True),
+                                    nn.LeakyReLU(),
                                     nn.Conv2d(inplanes >> 3, out_channels, kernel_size=3, stride=1, padding=1),
                                     nn.Sigmoid())
 

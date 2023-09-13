@@ -1,9 +1,12 @@
+from abc import ABC
+
 import torch
 import torchvision
 from pytorch_lightning import Callback
 import wandb
 
 from facer.utils.visualisation import apply_landmarks, apply_masks
+
 
 
 class LandmarkLogger(Callback):
@@ -25,6 +28,27 @@ class LandmarkLogger(Callback):
         n = self.num_samples
         # Log the images as wandb Image
         val_imgs = apply_landmarks(val_imgs[:n], landmarks[:n], gt_landmarks[:n], connectivity=self.connectivity)
+        trainer.logger.experiment.log({"examples": [wandb.Image(val_img) for val_img in val_imgs]})
+
+
+class MasksLogger(Callback):
+    def __init__(self, val_samples, num_samples=32, mask_color=(0., 0, 1.), mask_alpha=0.5):
+        super().__init__()
+        self.num_samples = num_samples
+        self.mask_color = torch.tensor(mask_color).view(1, 3, 1, 1)
+        self.mask_alpha = mask_alpha
+        self.val_imgs, self.gt_masks = val_samples
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        # Bring the tensors to CPU
+        val_imgs = self.val_imgs.to(device=pl_module.device)
+        mask_color = self.mask_color.to(device=pl_module.device)
+        # Get model prediction
+        output = pl_module(val_imgs)
+        masks = output
+
+        # Log the images as wandb Image
+        val_imgs = apply_masks(val_imgs, masks, mask_color, self.mask_alpha)
         trainer.logger.experiment.log({"examples": [wandb.Image(val_img) for val_img in val_imgs]})
 
 
