@@ -76,7 +76,8 @@ if __name__ == "__main__":
 
     trainer.fit(regressor, data_module)
     best_ckpt = Path(trainer.checkpoint_callback.best_model_path)
-    shutil.copyfile(best_ckpt, best_ckpt.with_stem("model-best"))
+    new_best_ckpt = best_ckpt.parent / "model-best.ckpt"
+    shutil.copyfile(best_ckpt, new_best_ckpt)
     trainer.test(regressor, data_module)
     trainer.test(regressor, data_module, ckpt_path=str(best_ckpt))
 
